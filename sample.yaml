@@ -27,7 +27,9 @@ tests:
         - "health: 100 readings processed, 0 dropped, 0 out of order, 0 failed reads"
   # Verifies: REQ-005
   sensor_node.app.sensor_fault:
+    # Twister passes these as DTC_OVERLAY_FILE, which replaces app.overlay: list it too.
     extra_dtc_overlay_files:
+      - "app.overlay"
       - "tests/overlays/fault.overlay"
     harness_config:
       type: multi_line

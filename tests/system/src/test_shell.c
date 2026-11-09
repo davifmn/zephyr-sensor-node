@@ -26,7 +26,15 @@ static const char *run(const char *cmd, int expected)
 	return shell_backend_dummy_get_output(sh, &size);
 }
 
-#define assert_contains(out, text) zassert_not_null(strstr(out, text), "no '%s' in:\n%s", text, out)
+/*
+ * A function, not a macro: zassert evaluates its message arguments too, so a macro that
+ * names `out` twice would run the shell command twice (and the second run would consume
+ * an injected failure the first one was meant to see).
+ */
+static void assert_contains(const char *out, const char *text)
+{
+	zassert_not_null(strstr(out, text), "no '%s' in:\n%s", text, out);
+}
 
 static void *setup(void)
 {

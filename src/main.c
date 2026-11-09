@@ -8,6 +8,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/logging/log_ctrl.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/reboot.h>
 #include <zephyr/task_wdt/task_wdt.h>
@@ -41,7 +42,7 @@ static void watchdog_expired(int channel_id, void *user_data)
 {
 	ARG_UNUSED(channel_id);
 	printk("WATCHDOG: %s thread stalled, rebooting\n", (const char *)user_data);
-	LOG_PANIC();
+	log_panic(); /* flush the log before the reset */
 	sys_reboot(SYS_REBOOT_COLD);
 }
 
