@@ -85,6 +85,7 @@ jobs:
             zephyr-sensor-node/gdb-session.txt
             zephyr-sensor-node/twister-out/twister.json
             zephyr-sensor-node/twister-out/twister.log
+            zephyr-sensor-node/twister-out/**/sensor_node.app.*/handler.log
 
   static-analysis:
     name: cppcheck, MISRA C:2012 subset, clang-tidy
