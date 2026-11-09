@@ -1,0 +1,7 @@
+build*/
+twister-out*/
+*.dump
+traceability.md
+gdb-session.txt
+build.log
+qemu.log

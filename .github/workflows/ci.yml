@@ -1,0 +1,104 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  firmware:
+    name: Build, Twister on QEMU, traceability, GDB session
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          path: zephyr-sensor-node
+          persist-credentials: false
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      # west init + update (Zephyr v4.5.0 from west.yml), the Zephyr SDK with the Arm
+      # toolchain and the host tools (QEMU).
+      - name: Set up Zephyr
+        uses: zephyrproject-rtos/action-zephyr-setup@v1.0.15
+        with:
+          app-path: zephyr-sensor-node
+          toolchains: arm-zephyr-eabi
+
+      - name: Build the application (qemu_cortex_m3)
+        working-directory: zephyr-sensor-node
+        run: |
+          west build -b qemu_cortex_m3 -d build . 2>&1 | tee build.log
+          {
+            echo '### Memory use (qemu_cortex_m3)'
+            echo '```'
+            grep -A4 "Memory region" build.log || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Twister (unit, driver, shell and application tests on QEMU)
+        working-directory: zephyr-sensor-node
+        run: west twister -T . --integration -v --inline-logs --outdir twister-out
+
+      - name: Traceability matrix (requirement → test → result)
+        if: always()
+        working-directory: zephyr-sensor-node
+        run: |
+          set +e
+          python3 scripts/trace.py twister-out/twister.json > traceability.md
+          status=$?
+          cat traceability.md >> "$GITHUB_STEP_SUMMARY"
+          exit $status
+
+      - name: GDB session against QEMU
+        working-directory: zephyr-sensor-node
+        run: |
+          sudo apt-get install -y --no-install-recommends gdb-multiarch
+          west build -b qemu_cortex_m3 -d build-gdb . -- \
+            -DEXTRA_CONF_FILE="debug.conf;tests/overlays/stall.conf"
+          west build -d build-gdb -t debugserver_qemu > qemu.log 2>&1 &
+          sleep 5
+          timeout 120 gdb-multiarch -batch -x scripts/gdb-session.gdb build-gdb/zephyr/zephyr.elf \
+            2>&1 | tee gdb-session.txt
+          pkill -f qemu-system-arm || true
+          grep -q "Breakpoint 1, node_process" gdb-session.txt
+          grep -q "Breakpoint 2, watchdog_expired" gdb-session.txt
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: results
+          path: |
+            zephyr-sensor-node/traceability.md
+            zephyr-sensor-node/gdb-session.txt
+            zephyr-sensor-node/twister-out/twister.json
+            zephyr-sensor-node/twister-out/twister.log
+
+  static-analysis:
+    name: cppcheck, MISRA C:2012 subset, clang-tidy
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Install the tools
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends cppcheck clang-tidy
+      - name: cppcheck
+        run: |
+          cppcheck --std=c11 --enable=warning,style,performance,portability --inline-suppr \
+            --error-exitcode=1 --quiet -Isrc/lib -Isrc src/lib src/drivers/thermo_i2c.h
+      - name: MISRA C:2012 (cppcheck addon)
+        run: scripts/misra.sh
+      - name: clang-tidy
+        run: clang-tidy --quiet src/lib/*.c -- -std=c11 -Isrc/lib
+      - name: Strict host compile of the portable modules
+        run: |
+          for f in src/lib/*.c; do
+            cc -std=c11 -Wall -Wextra -Wshadow -Wconversion -Wsign-conversion -Wpedantic -Werror \
+              -Isrc/lib -c "$f" -o /dev/null
+          done

@@ -1,0 +1,4 @@
+/* The sensor stops answering for temperature reads 30, 31 and 32. */
+&temp_sensor {
+	sim-fail-at-read = <30>;
+};

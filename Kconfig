@@ -1,0 +1,5 @@
+mainmenu "Sensor node"
+
+rsource "Kconfig.app"
+
+source "Kconfig.zephyr"

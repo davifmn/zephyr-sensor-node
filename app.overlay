@@ -1,0 +1,24 @@
+/*
+ * The temperature sensor on an emulated I2C bus. The emulator answers the driver's I2C
+ * transfers register by register, as the chip would; its temperature follows a triangle
+ * from 21 C up to 35 C and back over 80 readings, enough to raise and clear the alarm in
+ * every cycle. For real hardware, put the same sensor node under the board's I2C
+ * controller instead.
+ */
+/ {
+	i2c_emul: i2c@100 {
+		compatible = "zephyr,i2c-emul-controller";
+		status = "okay";
+		reg = <0x100 4>;
+		clock-frequency = <100000>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		#forward-cells = <1>;
+
+		temp_sensor: thermo@48 {
+			compatible = "vnd,thermo-i2c";
+			status = "okay";
+			reg = <0x48>;
+		};
+	};
+};

@@ -1,0 +1,33 @@
+description: |
+  THERMO-1 I2C temperature sensor (a fictitious part; register map in docs/sensor.md).
+
+  The sim-* properties configure the emulator (src/drivers/thermo_i2c_emul.c), which
+  stands in for the chip on an emulated bus. The driver ignores them.
+
+compatible: "vnd,thermo-i2c"
+
+include: i2c-device.yaml
+
+properties:
+  sim-baseline-milli-celsius:
+    type: int
+    default: 21000
+    description: Emulator. Temperature at the bottom of the triangle profile.
+  sim-amplitude-milli-celsius:
+    type: int
+    default: 14000
+    description: Emulator. Rise from the baseline to the top of the profile.
+  sim-period-reads:
+    type: int
+    default: 80
+    description: Emulator. Temperature reads per cycle; even, at least 2.
+  sim-fail-at-read:
+    type: int
+    default: 0
+    description: |
+      Emulator. Temperature reads number sim-fail-at-read to sim-fail-at-read + 2 fail
+      (no acknowledge), like a chip that drops off the bus. 0 never fails.
+  sim-device-id:
+    type: int
+    default: 21553
+    description: Emulator. Value of the DEVICE_ID register (0x5431 is the real part).

@@ -1,0 +1,15 @@
+# clang-tidy for the portable modules (src/lib), run by CI on the host compiler.
+Checks: >
+  -*,
+  bugprone-*,
+  -bugprone-easily-swappable-parameters,
+  cert-*,
+  clang-analyzer-*,
+  misc-*,
+  -misc-include-cleaner,
+  readability-braces-around-statements,
+  readability-implicit-bool-conversion,
+  readability-misleading-indentation,
+  readability-non-const-parameter
+WarningsAsErrors: '*'
+HeaderFilterRegex: 'src/lib/.*'

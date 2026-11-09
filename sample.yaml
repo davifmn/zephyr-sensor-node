@@ -1,0 +1,51 @@
+# The whole application on QEMU, checked from its console output. The comment above each
+# scenario lists the requirements it verifies (docs/requirements.md, scripts/trace.py).
+sample:
+  name: Sensor node
+  description: Temperature node with an I2C sensor, alarm, watchdog and shell
+common:
+  tags: sensor_node
+  platform_allow:
+    - qemu_cortex_m3
+    - mps2/an385
+  integration_platforms:
+    - qemu_cortex_m3
+    - mps2/an385
+  harness: console
+  timeout: 60
+tests:
+  # Verifies: REQ-001, REQ-003, REQ-004
+  sensor_node.app.alarm_cycle:
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "sensor node started: a reading every 100 ms"
+        - "ALARM ON: average 3[0-9]\\.[0-9]{3} C reached 30\\.000 C"
+        - "health: 50 readings processed, 0 dropped, 0 out of order, 0 failed reads"
+        - "ALARM OFF: average 2[0-8]\\.[0-9]{3} C back to 28\\.000 C"
+        - "health: 100 readings processed, 0 dropped, 0 out of order, 0 failed reads"
+  # Verifies: REQ-005
+  sensor_node.app.sensor_fault:
+    extra_dtc_overlay_files:
+      - "tests/overlays/fault.overlay"
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "FAULT: 3 failed reads in a row"
+        - "RECOVERED: sensor answers again, state (NORMAL|HIGH)"
+        - "health: 50 readings processed, 0 dropped, 0 out of order, 3 failed reads"
+  # Verifies: REQ-012
+  sensor_node.app.watchdog:
+    extra_configs:
+      - CONFIG_APP_TEST_STALL_AFTER=20
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "Booting Zephyr OS"
+        - "test: processing thread stops here"
+        - "WATCHDOG: processing thread stalled, rebooting"
+        - "Booting Zephyr OS"
+        - "sensor node started"

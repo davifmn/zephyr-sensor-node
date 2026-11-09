@@ -1,0 +1,11 @@
+/* The application's sensor, plus a second chip that answers with the wrong DEVICE_ID. */
+#include "../../app.overlay"
+
+&i2c_emul {
+	wrong_sensor: thermo@49 {
+		compatible = "vnd,thermo-i2c";
+		status = "okay";
+		reg = <0x49>;
+		sim-device-id = <0x1234>;
+	};
+};

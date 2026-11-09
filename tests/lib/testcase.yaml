@@ -1,0 +1,11 @@
+# Unit tests of the portable modules (ring buffer, moving average, alarm state machine).
+common:
+  tags: sensor_node
+  platform_allow:
+    - qemu_cortex_m3
+    - mps2/an385
+  integration_platforms:
+    - qemu_cortex_m3
+    - mps2/an385
+tests:
+  sensor_node.lib: {}
