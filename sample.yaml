@@ -62,5 +62,6 @@ tests:
           expected: "readings: [0-9]+ processed, 0 dropped, 0 out of order, 0 failed"
         - command: "sensor fail 3"
           expected: "the next 3 reads will fail"
+        # shell_error() colours the line, so an escape sequence comes before the text.
         - command: "sensor fail 0"
-          expected: "usage: sensor fail <1-100>"
+          expected: ".*usage: sensor fail <1-100>"
